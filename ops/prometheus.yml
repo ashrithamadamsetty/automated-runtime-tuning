@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: automated-runtime-tuning
+    metrics_path: /actuator/prometheus
+    static_configs:
+      # host.docker.internal resolves to the machine running Docker, which is
+      # where the Spring Boot application listens.
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: automated-runtime-tuning

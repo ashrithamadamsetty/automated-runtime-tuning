@@ -1,0 +1,133 @@
+{
+  "title": "Automated Runtime Tuning",
+  "uid": "autotuning-main",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "loop",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(tuning_loop_error, loop)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Control loop: target vs actual",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "tuning_loop_target{loop=~\"$loop\"}", "legendFormat": "{{loop}} target" },
+        { "expr": "tuning_loop_actual{loop=~\"$loop\"}", "legendFormat": "{{loop}} actual" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Control error",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "tuning_loop_error{loop=~\"$loop\"}", "legendFormat": "{{loop}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "PID term contributions",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "tuning_loop_proportional{loop=~\"$loop\"}", "legendFormat": "{{loop}} P" },
+        { "expr": "tuning_loop_integral{loop=~\"$loop\"}", "legendFormat": "{{loop}} I" },
+        { "expr": "tuning_loop_derivative{loop=~\"$loop\"}", "legendFormat": "{{loop}} D" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Requested vs applied value",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "tuning_loop_requested{loop=~\"$loop\"}", "legendFormat": "{{loop}} requested" },
+        { "expr": "tuning_loop_applied{loop=~\"$loop\"}", "legendFormat": "{{loop}} applied" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Changes / skipped / faults (per second)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "rate(tuning_loop_changes_total{loop=~\"$loop\"}[1m])", "legendFormat": "{{loop}} changes" },
+        { "expr": "rate(tuning_loop_skipped_total{loop=~\"$loop\"}[1m])", "legendFormat": "{{loop}} skipped" },
+        { "expr": "rate(tuning_loop_faults_total{loop=~\"$loop\"}[1m])", "legendFormat": "{{loop}} faults" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Saturation (at min / at max / downstream starved)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "tuning_loop_at_min{loop=~\"$loop\"}", "legendFormat": "{{loop}} at min" },
+        { "expr": "tuning_loop_at_max{loop=~\"$loop\"}", "legendFormat": "{{loop}} at max" },
+        { "expr": "tuning_downstream_starved", "legendFormat": "downstream starved" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Thread pool",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "apptuning_threadpool_max", "legendFormat": "max" },
+        { "expr": "apptuning_threadpool_active", "legendFormat": "active" },
+        { "expr": "apptuning_threadpool_size", "legendFormat": "pool size" },
+        { "expr": "apptuning_threadpool_queue", "legendFormat": "queued" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HikariCP connection pool",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        { "expr": "apptuning_dbpool_max", "legendFormat": "max" },
+        { "expr": "apptuning_dbpool_active", "legendFormat": "active" },
+        { "expr": "apptuning_dbpool_idle", "legendFormat": "idle" },
+        { "expr": "apptuning_dbpool_pending", "legendFormat": "threads waiting" },
+        { "expr": "apptuning_dbpool_dba_limit", "legendFormat": "DBA limit" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rate limiter",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "targets": [
+        { "expr": "ratelimiter_limit", "legendFormat": "limit / second" },
+        { "expr": "rate(ratelimiter_requests_permitted_total[1m])", "legendFormat": "permitted/s" },
+        { "expr": "rate(ratelimiter_requests_rejected_total[1m])", "legendFormat": "rejected/s (429)" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request latency and throughput",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "targets": [
+        { "expr": "rate(http_server_requests_seconds_count[1m])", "legendFormat": "requests/s {{status}}" },
+        { "expr": "rate(http_server_requests_seconds_sum[1m]) / rate(http_server_requests_seconds_count[1m])", "legendFormat": "mean latency" },
+        { "expr": "http_server_requests_seconds_max", "legendFormat": "max latency" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM safety indicators",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
+      "targets": [
+        { "expr": "system_cpu_usage", "legendFormat": "system CPU" },
+        { "expr": "process_cpu_usage", "legendFormat": "process CPU" },
+        { "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}", "legendFormat": "heap used fraction" },
+        { "expr": "rate(jvm_gc_pause_seconds_sum[1m])", "legendFormat": "GC pause/s" }
+      ]
+    }
+  ]
+}
